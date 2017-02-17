@@ -11,13 +11,15 @@
     using Microsoft.Bot.Builder.Dialogs;
     using Microsoft.Bot.Connector;
     using Services;
+    using Newtonsoft.Json;
 
     [BotAuthentication]
     public class MessagesController : ApiController
     {
         private static readonly bool IsSpellCorrectionEnabled = bool.Parse(WebConfigurationManager.AppSettings["IsSpellCorrectionEnabled"]);
-
+        private static readonly bool IsQAEnabled = bool.Parse(WebConfigurationManager.AppSettings["IsQAEnabled"]);
         private readonly BingSpellCheckService spellService = new BingSpellCheckService();
+        private readonly QnAService qnaService = new QnAService();
 
         /// <summary>
         /// POST: api/Messages
@@ -25,8 +27,10 @@
         /// </summary>
         public async Task<HttpResponseMessage> Post([FromBody]Activity activity)
         {
+            string message;
             if (activity.Type == ActivityTypes.Message)
             {
+                var connector = new ConnectorClient(new Uri(activity.ServiceUrl));
                 if (IsSpellCorrectionEnabled)
                 {
                     try
@@ -38,8 +42,28 @@
                         Trace.TraceError(ex.ToString());
                     }
                 }
+                if (IsQAEnabled)
+                {
+                    try
+                    {
+                        message = await this.qnaService.getQAAnswer(activity.Text);
+                        var qnaResult = JsonConvert.DeserializeObject<QnAMakerResult>(message);
+                        message = qnaResult.Answer + "\n\nScore: " + qnaResult.Score;
 
-                await Conversation.SendAsync(activity, () => new RootLuisDialog());
+                        Activity reply = activity.CreateReply(message);
+
+                        await connector.Conversations.ReplyToActivityAsync(reply);
+                    }
+                    catch (Exception ex)
+                    {
+                        Trace.TraceError(ex.ToString());
+                    }
+                }
+                else
+                {
+
+                    await Conversation.SendAsync(activity, () => new RootLuisDialog());
+                }
             }
             else
             {

@@ -133,6 +133,8 @@
     <Compile Include="Services\BingSpellCheckResponse.cs" />
     <Compile Include="Services\BingSpellCheckService.cs" />
     <Compile Include="Services\BingSpellCheckSuggestion.cs" />
+    <Compile Include="Services\QnAMakerResult.cs" />
+    <Compile Include="Services\QnASerives.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="packages.config" />
