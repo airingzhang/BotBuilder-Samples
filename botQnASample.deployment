@@ -1,0 +1,4 @@
+[config]
+command = deploy.cmd
+[config]
+project = CSharp/intelligence-LUIS/LuisBot.csproj
